@@ -1,0 +1,28 @@
+version: 2.1
+
+description: |
+  A standard workflow for deploying ambassador platform services to their respective dev environments.
+
+executors:
+  operator:
+    docker:
+      - image: circleci/python:2.7.15
+
+jobs:
+  shell: /bin/bash --login
+  steps:
+    - run:
+      command: |
+        git clone ${CONFIG_REPO} conf && cd conf
+        mkdir -p ./venv
+        virtualenv ./venv
+        . venv/bin/activate
+        pip install -e git+git@github.com:GetAmbassador/yaml-merge.git@master#egg-info=yaml-merge
+    - run:
+        command: |
+          ./venv/bin/yaml-merge yaml-merge
+
+
+# commands:
+#   apply_definitions:
+#     steps:
