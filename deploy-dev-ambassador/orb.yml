@@ -15,6 +15,10 @@ jobs:
     steps:
       - gcp-cli/install
       - kubernetes/install
+      - checkout
+      - run:
+          command: |
+            echo "export CONTAINER_TAG=$CIRCLE_BRANCH-$(git rev-parse --short $CIRCLE_SHA1)" >> $BASH_ENV
       - run:
           command: |
             echo $GCP_KEY_FILE > ${HOME}/gcloud-service-key.json
@@ -26,6 +30,10 @@ jobs:
 
       - run:
           command: |
-            echo $(env) > ${HOME}/.env
+            cat \<<EOF > ${HOME}/.env
+            $(env)
+            EOF
+      - run:
+          command: |
             git clone ${CONFIG_REPO} ${HOME}/config && cd ${HOME}/config
-            docker run --env-file=${HOME}/.env --mount type=bind,source="${HOME}/config",target="/config" brandoshmando/yaml-merge | kubectl apply -f -
+            docker run -i --env-file=${HOME}/.env --mount type=bind,source="${HOME}/config",target="/config" brandoshmando/yaml-merge | kubectl apply -f -
