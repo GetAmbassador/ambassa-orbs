@@ -3,26 +3,29 @@ version: 2.1
 description: |
   A standard workflow for deploying ambassador platform services to their respective dev environments.
 
-executors:
-  operator:
-    docker:
-      - image: circleci/python:2.7.15
+orbs:
+  gcp-cli: circleci/gcp-cli@1.0.0
+  kubernetes: circleci/kubernetes@0.1.0
 
 jobs:
-  shell: /bin/bash --login
-  steps:
-    - run:
-      command: |
-        git clone ${CONFIG_REPO} conf && cd conf
-        mkdir -p ./venv
-        virtualenv ./venv
-        . venv/bin/activate
-        pip install -e git+git@github.com:GetAmbassador/yaml-merge.git@master#egg-info=yaml-merge
-    - run:
-        command: |
-          ./venv/bin/yaml-merge yaml-merge
+  deploy:
+    machine:
+      enabled: true
+    shell: /bin/bash --login
+    steps:
+      - gcp-cli/install
+      - kubernetes/install
+      - run:
+          command: |
+            echo $GCP_KEY_FILE > ${HOME}/gcloud-service-key.json
 
+            gcloud auth activate-service-account --key-file=${HOME}/gcloud-service-key.json
+            gcloud --quiet config set project $GOOGLE_PROJECT_ID
+            gcloud --quiet config set compute/zone $GOOGLE_COMPUTE_ZONE
+            gcloud container clusters get-credentials ambassador
 
-# commands:
-#   apply_definitions:
-#     steps:
+      - run:
+          command: |
+            echo $(env) > ${HOME}/.env
+            git clone ${CONFIG_REPO} ${HOME}/config && cd ${HOME}/config
+            docker run --env-file=${HOME}/.env --mount type=bind,source="${HOME}/config",target="/config" brandoshmando/yaml-merge | kubectl apply -f -
