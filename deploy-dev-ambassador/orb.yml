@@ -17,11 +17,8 @@ jobs:
     steps:
       - gcp-cli/install
       - kubernetes/install
-      - checkout
       - run:
-          command: |
-            echo "export CONTAINER_TAG=$CIRCLE_BRANCH-$(git rev-parse --short $CIRCLE_SHA1)" >> $BASH_ENV
-      - run:
+          name: Configure gcp-cli and kubectl
           command: |
             echo $GCP_KEY_FILE > ${HOME}/gcloud-service-key.json
 
@@ -29,13 +26,22 @@ jobs:
             gcloud --quiet config set project $GOOGLE_PROJECT_ID
             gcloud --quiet config set compute/zone $GOOGLE_COMPUTE_ZONE
             gcloud container clusters get-credentials ambassador
-
+      - checkout
       - run:
+          name: Generate container tag
+          command: |
+            echo "export CONTAINER_TAG=$CIRCLE_BRANCH-$(git rev-parse --short $CIRCLE_SHA1)" >> $BASH_ENV
+      - run:
+          name: Export env
           command: |
             cat \<<EOF > ${HOME}/.env
             $(env)
             EOF
       - run:
+          name: Pull kubernetes config
           command: |
             git clone ${CONFIG_REPO} ${HOME}/config && cd ${HOME}/config
+      - run:
+          name: Merge tags and apply config
+          command: |
             docker run -i --env-file=${HOME}/.env --mount type=bind,source="${HOME}/config",target="/config" brandoshmando/yaml-merge | kubectl apply -f -
