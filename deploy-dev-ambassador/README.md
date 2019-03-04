@@ -16,14 +16,14 @@ In order to use the `deploy` job from the `deploy-dev-ambassador` orb, the follo
 
 #### Environment Variables Provided
 
-This job sets an environment variable using the git commit sha in step 5:
+`CIRCLE_BRANCH` - The name of the branch on which the code as been committed. Used in conjunction with the shortened sha of the git commit to create the `CONTAINER_TAG` value.
 
-`CONTAINER_TAG` - The shortened sha of the git commit. This tag can then be used to merge into the kubernetes yaml config files set in the `CONFIG_REPO`. This particular logic assumes that a container image using this commit was built and pushed to the Google Container Registry with the same tag, in a previous job in the workflow **or** a manual build/push.
+`CONTAINER_TAG` - The shortened sha of the git commit appended with a dash to the `CIRCLE_BRANCH`. This tag can then be used to merge into the kubernetes yaml config files set in the `CONFIG_REPO`. This particular logic assumes that a container image using this commit was built and pushed to the Google Container Registry with the same tag, in a previous job in the workflow **or** a manual build/push.
 
 Example of how this would be used in the kubernetes yaml config repo:
 
 ```yaml
-# some container / deployment spec 
+# some container / deployment spec
 ...
 image: gcr.io/some-bucket/some-app:{CONTAINER_TAG}
 ...
@@ -33,7 +33,7 @@ The container tag would then be merged into the output config file in step 8.
 
 
 #### Flow
-The deploy-dev-ambassador orb has a very specific flow that was designed with the principles of GitOps in mind in that, a dev should not know or care how an app is deployed. The only thing a dev should worry about it committing their code via git and a version of that code will be deployed in an observable and testable environment for them. This is implemented with the following:
+The deploy-dev-ambassador orb has a very specific flow that was designed with the principles of GitOps in mind in that, a dev should not know or care how an app is deployed. The only thing a dev should worry about is committing their code via git and a version of that code will be deployed in an observable and testable environment for them. This is implemented with the following:
 
 **Job name:** `deploy`
 
@@ -53,7 +53,7 @@ This step sets up the auth for the Google Cloud Platform CLI which then allows u
 
 **4) checkout**
 
-This step will checkout the source code of the the source repo for the project where the orb's job is implemented.
+This step will checkout the source code of the source repo for the project where the orb's job is implemented.
 
 **5) Generate container tag**
 

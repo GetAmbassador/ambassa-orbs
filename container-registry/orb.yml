@@ -40,13 +40,11 @@ jobs:
       - image: circleci/python:3.7.2
     shell: /bin/bash --login
     steps:
-      - checkout
       - setup_remote_docker:
           docker_layer_caching: true
+      - checkout
       - run:
-          command: |
-            echo "HELLO"
-      - run:
+          name: Generate container tag
           command: |
             echo "export CONTAINER_TAG=$CIRCLE_BRANCH-$(git rev-parse --short $CIRCLE_SHA1)" >> $BASH_ENV
       - gcp-gcr/gcr-auth
