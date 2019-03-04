@@ -39,6 +39,8 @@ The deploy-dev-ambassador orb has a very specific flow that was designed with th
 
 **Steps:**
 
+**Note:** This job uses the circleci `machine` as an executor. This generally is a slower approach because a VM needs to be spun up. However, one of the steps requires mounting a volume into a docker container, and as such, requires the use of the VM. Using `setup_remote_docker` does not work for this use case.
+
 **1) gcp-cli/install**
 
 This step uses an official orb from circleci to install the Google Cloud Platform CLI.
